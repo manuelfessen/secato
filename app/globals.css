@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --red: #e40421;
+  --red-dark: #c1041c;
+  --ink: #111111;
+  --muted: #5a5a5a;
+  --paper: #f4f1eb;
+  --paper-2: #ebe6dc;
+  --line: #ddd6c8;
+  --white: #ffffff;
+}
+
+@theme inline {
+  --color-red: var(--red);
+  --color-red-dark: var(--red-dark);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-line: var(--line);
+  --font-sans: var(--font-archivo);
+  --font-serif: var(--font-source-serif);
+  --font-mono: var(--font-ibm);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+::selection {
+  background: var(--red);
+  color: white;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 80;
+  background: var(--ink);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
