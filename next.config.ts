@@ -1,36 +1,19 @@
 import type { NextConfig } from "next";
 
+const repo = "secato";
+const isGithubPages = process.env.GITHUB_PAGES === "true";
+
 const nextConfig: NextConfig = {
+  output: "export",
   trailingSlash: true,
-  async redirects() {
-    return [
-      {
-        source: "/zerspanung",
-        destination: "/produkte/zerspanung",
-        permanent: true,
-      },
-      {
-        source: "/hebetechnik",
-        destination: "/produkte/hebetechnik",
-        permanent: true,
-      },
-      {
-        source: "/secato-werkzeuge",
-        destination: "/produkte/zerspanung/secato-werkzeuge",
-        permanent: true,
-      },
-      {
-        source: "/ansprechpartner",
-        destination: "/kontakt/ansprechpartner",
-        permanent: true,
-      },
-      {
-        source: "/produkte/zerspanungs-technik/:path*",
-        destination: "/produkte/zerspanung",
-        permanent: true,
-      },
-    ];
+  images: {
+    unoptimized: true,
   },
+  ...(isGithubPages
+    ? {
+        basePath: `/${repo}`,
+      }
+    : {}),
 };
 
 export default nextConfig;

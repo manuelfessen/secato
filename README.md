@@ -22,7 +22,17 @@ Kein CMS, kein Cookie-Banner, keine eingebetteten Google-Dienste.
 
 ## Deploy
 
-Vercel, Netlify oder jeder Node-Host mit `npm run build` und `npm start`. Trailing Slashes sind an, damit die bisherigen WordPress-URLs erhalten bleiben.
+Statischer Export (`output: "export"`). Lokal bauen und prüfen:
+
+```bash
+npm run build
+npx serve out
+```
+
+GitHub Pages baut bei jedem Push auf `main` und veröffentlicht unter
+`https://manuelfessen.github.io/secato/`. Der Workflow setzt dafür `GITHUB_PAGES=true`
+(Base-Path `/secato`). Ohne diese Variable bleibt die Seite auf der Domain-Wurzel,
+z. B. später auf secato.de.
 
 ## Rechtliches
 

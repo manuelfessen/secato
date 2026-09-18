@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { site } from "@/lib/site";
 
@@ -61,9 +62,9 @@ export function ContactForm() {
         <input name="consent" type="checkbox" required className="mt-1 accent-red" />
         <span>
           Ich habe die{" "}
-          <a href="/datenschutz/" className="text-ink underline underline-offset-2">
+          <Link href="/datenschutz" className="text-ink underline underline-offset-2">
             Datenschutzerklärung
-          </a>{" "}
+          </Link>{" "}
           zur Kenntnis genommen und bin damit einverstanden, dass die von mir angegebenen
           Daten elektronisch erhoben und gespeichert werden. Meine Daten werden dabei nur
           streng zweckgebunden zur Bearbeitung und Beantwortung meiner Anfrage verwendet.

@@ -33,6 +33,9 @@ export const metadata: Metadata = {
   },
   description: site.description,
   alternates: { canonical: "/" },
+  ...(process.env.GITHUB_PAGES === "true"
+    ? { robots: { index: false, follow: false } }
+    : {}),
   openGraph: {
     title: site.name,
     description: site.description,
