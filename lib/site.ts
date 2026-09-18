@@ -65,3 +65,8 @@ export const footerNav = [
 export function telHref(phone: string) {
   return `tel:+49${phone.replace(/\s+/g, "").replace(/^0/, "")}`;
 }
+
+export function withBasePath(path: string) {
+  if (!path.startsWith("/")) return path;
+  return `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${path}`;
+}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Button } from "@/components/Button";
 import { PageHero } from "@/components/PageHero";
 import { downloads, formulas, tapDrills } from "@/lib/content";
+import { withBasePath } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Zerspanung",
@@ -56,7 +57,7 @@ export default function ZerspanungPage() {
             {downloads.map((item) => (
               <li key={item.href}>
                 <a
-                  href={item.href}
+                  href={withBasePath(item.href)}
                   className="flex items-center justify-between border border-line bg-white px-4 py-4 text-[0.95rem] font-medium hover:border-ink"
                 >
                   {item.title}
