@@ -51,6 +51,7 @@ const jsonLd = {
   "@type": "Organization",
   name: site.name,
   url: site.url,
+  logo: `${site.url}/images/logo.png`,
   email: site.email,
   telephone: "+492114226100",
   foundingDate: String(site.founded),

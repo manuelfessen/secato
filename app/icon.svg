@@ -1,4 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 56">
-  <polygon points="4,52 32,6 32,52" fill="#8a8a8a"/>
-  <polygon points="32,6 60,52 32,52" fill="#e40421"/>
+  <defs>
+    <mask id="insert">
+      <polygon points="32,3 61,53 3,53" fill="#fff"/>
+      <circle cx="32" cy="36" r="8" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#insert)">
+    <rect width="32" height="56" fill="#8a8a8a"/>
+    <rect x="32" width="32" height="56" fill="#e40421"/>
+  </g>
 </svg>
