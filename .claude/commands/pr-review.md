@@ -1,11 +1,13 @@
 ---
-allowed-tools: Bash(gh issue view:*), Bash(gh search:*), Bash(gh issue list:*), Bash(gh pr comment:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(gh pr list:*), Bash(gh api:*), mcp__github_inline_comment__create_inline_comment
+allowed-tools: Agent, Task, Read, Grep, Glob, Bash(gh issue view:*), Bash(gh search:*), Bash(gh issue list:*), Bash(gh pr comment:*), Bash(gh pr diff:*), Bash(gh pr view:*), Bash(gh pr list:*), Bash(gh api:*), mcp__github_inline_comment__create_inline_comment
 description: Code review a pull request, again after every push, until nothing new is found
 ---
 
 Provide a code review for the given pull request.
 
 This is Anthropic's `code-review` plugin procedure (claude-code/plugins/code-review), adapted for a review chain: it runs on every push, so after the author (or Auto-fix) pushes a fix, the PR is reviewed again until a run finds nothing new. The plugin stops as soon as Claude has commented once; this command does not.
+
+**Run every step with real subagents.** Launch each agent below with the Agent tool (older name: Task), using the model it names. Never review the diff yourself in one pass instead: until Nov 14, 2026 every run did that (about 6 turns, Sonnet only, no subagent) and reported "No issues found" on pull requests where Codex found real bugs. If the Agent tool is missing or an agent fails, do not post "No issues found": post a summary comment that says which step could not run and ends with `Review incomplete for commit: <full head SHA>` instead of the `Reviewed commit:` line, so step 1 does not count the commit as reviewed and a rerun tries again.
 
 **Agent assumptions (applies to all agents and subagents):**
 - All tools are functional and will work without error. Do not test tools or make exploratory calls. Make sure this is clear to every subagent that is launched.
@@ -16,12 +18,13 @@ To do this, follow these steps precisely:
 1. Launch a haiku agent to check if any of the following are true:
    - The pull request is closed
    - The pull request is a draft
-   - The pull request does not need code review (e.g. automated PR, trivial change that is obviously correct)
    - The current head commit was already reviewed: a comment by claude contains `Reviewed commit: <full head SHA>` (get the head SHA with `gh pr view <PR> --json headRefOid`)
 
    If any condition is true, stop and do not proceed.
 
    Earlier reviews of older commits are NOT a reason to stop. They are input for step 6.
+
+   Size and kind of change are NOT a reason to stop either: deletions, one-line fixes, reverts, version bumps and doc changes all get the full review. A check that judged changes "trivial" or "obviously correct" silently skipped 17 pull requests in manuelfessen/dun in Oct 2026.
 
 Note: Still review Claude generated PR's.
 
@@ -37,26 +40,27 @@ Note: Still review Claude generated PR's.
    Audit changes for CLAUDE.md compliance in parallel. Note: When evaluating CLAUDE.md compliance for a file, you should only consider CLAUDE.md files that share a file path with the file or parents.
 
    Agent 3: Opus bug agent (parallel subagent with agent 4)
-   Scan for obvious bugs. Focus only on the diff itself without reading extra context. Flag only significant bugs; ignore nitpicks and likely false positives. Do not flag issues that you cannot validate without looking at context outside of the git diff.
+   Scan the diff for significant bugs. Read the code the changed lines call and the callers of changed functions in the checked-out repository (Read, Grep, Glob) before deciding; ignore nitpicks.
 
    Agent 4: Opus bug agent (parallel subagent with agent 3)
-   Look for problems that exist in the introduced code. This could be security issues, incorrect logic, etc. Only look for issues that fall within the changed code. Pay particular attention to code changed by the most recent push, since fixes for earlier findings can introduce new problems.
+   Look for problems that exist in the introduced code: incorrect logic, timing and ordering, persistence, security. Walk through the flows the change touches, including slow or missing network, a relaunch or kill in the middle, background and foreground, and async work finishing in a different order. Only look for issues that fall within the changed code, but read surrounding code to confirm them. Pay particular attention to code changed by the most recent push, since fixes for earlier findings can introduce new problems.
 
    **CRITICAL: We only want HIGH SIGNAL issues.** Flag issues where:
    - The code will fail to compile or parse (syntax errors, type errors, missing imports, unresolved references)
    - The code will definitely produce wrong results regardless of inputs (clear logic errors)
+   - The code produces wrong results, lost data or wrong analytics under conditions real users meet (slow or no network, relaunch, a race between async tasks, state shared between processes or devices), and you can write the concrete sequence of events that leads there
    - Clear, unambiguous CLAUDE.md violations where you can quote the exact rule being broken
 
    Do NOT flag:
    - Code style or quality concerns
-   - Potential issues that depend on specific inputs or state
+   - Speculative issues without a concrete sequence of events, or ones that need inputs the code can never receive
    - Subjective suggestions or improvements
 
    If you are not certain an issue is real, do not flag it. False positives erode trust and waste reviewer time.
 
    In addition to the above, each subagent should be told the PR title and description. This will help provide context regarding the author's intent.
 
-5. For each issue found in the previous step by any of the four agents, launch parallel subagents to validate the issue. (The upstream plugin validates only agents 3 and 4, which made step 6 drop every CLAUDE.md finding.) These subagents should get the PR title and description along with a description of the issue. The agent's job is to review the issue to validate that the stated issue is truly an issue with high confidence. For example, if an issue such as "variable is not defined" was flagged, the subagent's job would be to validate that is actually true in the code. Another example would be CLAUDE.md issues. The agent should validate that the CLAUDE.md rule that was violated is scoped for this file and is actually violated. Use Opus subagents for bugs and logic issues, and sonnet agents for CLAUDE.md violations.
+5. For each issue found in the previous step by any of the four agents, launch parallel subagents to validate the issue. Validators read the code in the checked-out repository; a realistic failure sequence counts as validated when each step of it is possible in the code. (The upstream plugin validates only agents 3 and 4, which made step 6 drop every CLAUDE.md finding.) These subagents should get the PR title and description along with a description of the issue. The agent's job is to review the issue to validate that the stated issue is truly an issue with high confidence. For example, if an issue such as "variable is not defined" was flagged, the subagent's job would be to validate that is actually true in the code. Another example would be CLAUDE.md issues. The agent should validate that the CLAUDE.md rule that was violated is scoped for this file and is actually violated. Use Opus subagents for bugs and logic issues, and sonnet agents for CLAUDE.md violations.
 
 6. Filter out any issues that were not validated in step 5, and any issue that was already raised on this PR (step 3), whether it is still open, was fixed, or the author explained why it stays. Only re-raise an earlier issue if the code still has it AND nobody answered it. This step gives the list of new, high signal issues for this round.
 
@@ -96,7 +100,7 @@ Notes:
 - Use gh CLI to interact with GitHub (e.g., fetch pull requests, create comments). Do not use web fetch.
 - Create a todo list before starting.
 - You must cite and link each issue in inline comments (e.g., if referring to a CLAUDE.md, include a link to it).
-- Every summary comment ends with a line `Reviewed commit: <full head SHA>`, so the next run knows this commit is done (step 1).
+- Every summary comment ends with a line `Reviewed commit: <full head SHA>`, so the next run knows this commit is done (step 1). Put a line `Agents: <n> reviewers, <m> validators` above it, counting the agents that actually ran, so a skipped step shows.
 - If no issues are found and `--comment` argument is provided, post a comment with the following format:
 
 ---
@@ -104,6 +108,8 @@ Notes:
 ## Code review
 
 No issues found. Checked for bugs and CLAUDE.md compliance.
+
+Agents: <n> reviewers, <m> validators
 
 Reviewed commit: <full head SHA>
 
