@@ -48,6 +48,15 @@ jobs:
 
       - name: Review pull request
         uses: anthropics/claude-code-action@v1
+        env:
+          # WHY: Claude Code starts a subagent in the background, or moves a
+          # slow one there, and then ends the main turn to wait. The action
+          # takes that first turn end as the end of the run, so
+          # manuelfessen/dun#447 and #448 (Nov 16, 2026) stopped after 4 turns
+          # and 12 s with the reviewers still running and no comment posted.
+          # This keeps every agent in the foreground, so the main turn waits
+          # for each report.
+          CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: "1"
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: "/pr-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
